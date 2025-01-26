@@ -1,12 +1,14 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections;
-
+using UnityEngine.UI;
 public class MoveForce : MonoBehaviour
 {
 
     Vector3 startPosition = Vector3.zero, endPosition = Vector3.zero;
     float distance, angle;
     Rigidbody2D rb;
+    
     public float forceMagnitude = 10f;
     public float maxDistance = 15f; // Optional max distance limit
     public GameObject arrow;
@@ -19,10 +21,17 @@ public class MoveForce : MonoBehaviour
     private float floorTimer = 0f;
     private bool isOnFloor = false;
     private float maxFloorTime = 2f;
+ public Text scoreText ;
+
+    AudioSource audioSource;
+    Animator animator;
+    public AudioClip pushBuble, popBuble;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+         audioSource = GetComponent<AudioSource>();
+         animator = GetComponent<Animator>();
 
     }
 
@@ -48,6 +57,7 @@ public class MoveForce : MonoBehaviour
             // Calculate angle in the opposite direction
             oppositeAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 180f;
             endedDrag = true;
+            audioSource.PlayOneShot(pushBuble);
             arrow.SetActive(false);
 
 
@@ -85,28 +95,32 @@ public class MoveForce : MonoBehaviour
             endedDrag = false;
         }
 
-        if (isOnFloor)
-        {
-            floorTimer += Time.deltaTime;
-            if (floorTimer >= maxFloorTime)
-            {
-                Destroy(gameObject);
-            }
-        }
+        
+    }
+
+    public void DestroyBubble()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
 
 
 void OnCollisionEnter2D(Collision2D collision)
 {
-    if (collision.gameObject.CompareTag("flour"))
+    if (collision.gameObject.CompareTag("item"))
     {
-        isOnFloor = true;
+        Item item = collision.gameObject.GetComponent<Item>();
+        if (item != null)
+        {
+            scoreText.text = (int.Parse(scoreText.text) + item.scoreValue).ToString();
+        }
+        Destroy(collision.gameObject);
+      
+    } else {
+ audioSource.PlayOneShot(popBuble);
+        animator.SetTrigger("Exploaded");
     }
-    else if (collision.gameObject.CompareTag("obstacle"))
-    {
-        Destroy(gameObject);
-    }
+       
 }
 
     void OnCollisionExit2D(Collision2D collision)
